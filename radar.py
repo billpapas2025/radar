@@ -1,8 +1,7 @@
 import streamlit as st
 import numpy as np
-import cv2
 import time
-from PIL import Image
+from PIL import Image, ImageDraw
 
 # Parámetros de la simulación
 width, height = 640, 480
@@ -14,8 +13,7 @@ speed = st.sidebar.slider("Velocidad del robot", 1, 20, 5)
 
 # Cargar la imagen de fondo
 background_image_path = 'portada.webp'
-background_image = cv2.imread(background_image_path)
-background_image = cv2.resize(background_image, (width, height))
+background_image = Image.open(background_image_path).resize((width, height))
 
 # Simulación simple de movimiento del robot
 def move_robot_towards_goal(robot_pos, goal_pos, speed):
@@ -33,11 +31,12 @@ def move_robot_towards_goal(robot_pos, goal_pos, speed):
 def draw_environment(robot_pos, goal_pos, background_image):
     # Crear una copia de la imagen de fondo
     env = background_image.copy()
+    draw = ImageDraw.Draw(env)
     
     # Dibujar el objetivo y el robot
-    cv2.circle(env, (int(goal_pos[0]), int(goal_pos[1])), 10, (0, 255, 0), -1)  # Objetivo en verde
-    cv2.circle(env, (int(robot_pos[0]), int(robot_pos[1])), 10, (255, 0, 0), -1)  # Robot en azul
-    cv2.line(env, (int(robot_pos[0]), int(robot_pos[1])), (int(goal_pos[0]), int(goal_pos[1])), (255, 255, 255), 1)  # Línea blanca entre robot y objetivo
+    draw.ellipse((goal_pos[0] - 10, goal_pos[1] - 10, goal_pos[0] + 10, goal_pos[1] + 10), fill=(0, 255, 0))  # Objetivo en verde
+    draw.ellipse((robot_pos[0] - 10, robot_pos[1] - 10, robot_pos[0] + 10, robot_pos[1] + 10), fill=(0, 0, 255))  # Robot en azul
+    draw.line((robot_pos[0], robot_pos[1], goal_pos[0], goal_pos[1]), fill=(255, 255, 255), width=1)  # Línea blanca entre robot y objetivo
     
     return env
 
@@ -69,9 +68,9 @@ if start_simulation:
     while np.linalg.norm(np.array(goal_pos) - np.array(robot_pos)) > speed:
         robot_pos = move_robot_towards_goal(robot_pos, goal_pos, speed)
         env = draw_environment(robot_pos, goal_pos, background_image)
-        image_container.image(env, channels="BGR")
+        image_container.image(env, use_column_width=True)
         time.sleep(0.05)  # Pausa para hacer el movimiento más suave
 
 # Dibujar el entorno final
 env = draw_environment(robot_pos, goal_pos, background_image)
-image_container.image(env, channels="BGR")
+image_container.image(env, use_column_width=True)
